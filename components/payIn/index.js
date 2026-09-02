@@ -1,4 +1,4 @@
-import { formatMsatsToCCs, formatMsatsToSats } from '@/lib/format'
+import { formatMsatsToCCs, formatMsatsToDonated, formatMsatsToSats } from '@/lib/format'
 import { bolt11QrTransform } from '@/lib/bolt11'
 import { NORMAL_POLL_INTERVAL_MS } from '@/lib/constants'
 import { FAILED_PAY_IN_STATES, getPayInFailurePresentation, describePayInType, getPayInViewerAmounts } from '@/lib/pay-in'
@@ -9,7 +9,6 @@ import { PayInStatus, PayInStatusSkeleton } from './status'
 import { PayInContext, PAY_IN_INVOICE_CONTEXT_TYPES } from './context'
 import { GET_PAY_IN_FULL_WITHOUT_WALLET_INFO } from '@/fragments/payIn'
 import { PayInSankey, PayInSankeySkeleton } from './sankey'
-import { useMe } from '@/components/me'
 import {
   TransactionDetailHeading,
   TransactionDetailPage,
@@ -21,7 +20,6 @@ import {
 const TERMINAL_PAY_IN_STATES = new Set(['PAID', 'FAILED'])
 
 export default function PayIn ({ id, ssrData }) {
-  const { me } = useMe()
   const { data, error } = useWatchPayIn({ id, query: GET_PAY_IN_FULL_WITHOUT_WALLET_INFO })
 
   // Keep the SSR walletInfo instead of re-resolving it on every poll.
@@ -48,13 +46,14 @@ export default function PayIn ({ id, ssrData }) {
   const headingCredits = Math.abs(headingAmounts.CREDITS.mtokens)
   const headingAmount = [
     headingSats > 0 ? formatMsatsToSats(headingSats) : null,
-    headingCredits > 0 ? formatMsatsToCCs(headingCredits) : null
+    headingCredits > 0 ? formatMsatsToCCs(headingCredits) : null,
+    headingAmounts.donatedMtokens > 0 ? formatMsatsToDonated(headingAmounts.donatedMtokens) : null
   ].filter(Boolean).join(' · ') || undefined
 
   return (
     <TransactionDetailPage>
       <TransactionDetailHeading
-        title={describePayInType(payIn, me)}
+        title={describePayInType(payIn)}
         amount={headingAmount}
         walletInfo={payIn.walletInfo}
         status={<PayInStatus payIn={payIn} />}
